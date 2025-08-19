@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import * as tf from '@tensorflow/tfjs';
+import DrawingPad from './components/DrawingPad';
 
 function App() {
   const [model, setModel] = useState<tf.LayersModel | null>(null);
@@ -21,14 +22,13 @@ function App() {
   }, []);
 
   return (
-    <>
+    <div className='fixed inset-0 flex items-center justify-center'>
       {loading ? (
         <p>Loading model…</p>
       ) : (
-        <p>Model loaded ✅</p>
+        <DrawingPad />
       )}
-      <h1 className="text-4xl font-bold text-blue-500">Hello Tailwind!</h1>
-    </>
+    </div>
   )
 }
 
