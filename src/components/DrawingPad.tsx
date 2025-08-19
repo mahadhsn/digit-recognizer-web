@@ -1,24 +1,79 @@
 import React, { useEffect, useRef } from 'react';
 
 export type DrawingPadProps = {
-  width?: number;
-  height?: number;
-  lineWidth?: number;
-  /** If true, calls onChange while drawing (throttled). */
-  live?: boolean;
-  /** Called frequently while drawing when live=true. */
+    width?: number;
+    height?: number;
+    lineWidth?: number;
+    live?: boolean;
+    onDrawEnd?: (img: ImageData) => void;
+    onChange?: (img: ImageData) => void;
+    onClear?: () => void;
 };
 
 const DrawingPad: React.FC<DrawingPadProps> = ({
-    width = 280,
-    height = 280,
-    lineWidth = 18,
+    width,
+    height,
+    lineWidth = 30,
     live = true,
+    onDrawEnd,
+    onChange,
+    onClear,
     }) => {
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const drawingRef = useRef(false);
     const lastRef = useRef<{x: number; y: number} | null>(null);
+    const lastEmitRef = useRef(0);
+    const THROTTLE_MS = 80;
+
+    const dprRef = useRef(1);
+    const cssWRef = useRef(0);
+    const cssHRef = useRef(0);
+
+    const resizeAndScale = () => {
+        const c = canvasRef.current!;
+        const rect = c.getBoundingClientRect();
+        cssWRef.current = rect.width;
+        cssHRef.current = rect.height;
+        dprRef.current = window.devicePixelRatio || 1;
+        c.width = Math.round(rect.width * dprRef.current);
+        c.height = Math.round(rect.height * dprRef.current);
+        const ctx = c.getContext('2d')!;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dprRef.current, dprRef.current);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, rect.width, rect.height);
+
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = '#000000';
+    }
+
+    const clearCanvas = () => {
+        const c = canvasRef.current;
+        if (!c) {
+            return;
+        }
+        const ctx = c.getContext('2d');
+        if (!ctx) {
+            return;
+        }
+        // Reset transform before clearing to avoid double-scaling
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, c.width, c.height);
+        // Re-apply scaling
+        ctx.scale(dprRef.current, dprRef.current);
+        // Fill white background using CSS pixel sizes
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, cssWRef.current, cssHRef.current);
+        // Re-apply brush settings
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = '#000000';
+        onClear?.();
+    }
 
     const getPos = (e: React.MouseEvent<HTMLCanvasElement>) => {
         const rect = canvasRef.current!.getBoundingClientRect();
@@ -45,43 +100,54 @@ const DrawingPad: React.FC<DrawingPadProps> = ({
         ctx.lineTo(p.x, p.y);
         ctx.stroke();
         lastRef.current = p;
+
+        if (live && onChange) {
+          const now = performance.now();
+          if (now - lastEmitRef.current >= THROTTLE_MS) {
+            const c = canvasRef.current;
+            if (c) {
+              const ctx = c.getContext('2d');
+              if (ctx) {
+                onChange(ctx.getImageData(0, 0, c.width, c.height));
+                lastEmitRef.current = now;
+              }
+            }
+          }
+        }
     }
 
     const handleMouseUpLeave = () => {
         drawingRef.current = false;
         lastRef.current = null;
+        const c = canvasRef.current;
+        if (c) {
+            const ctx = c.getContext('2d');
+            if (ctx) onDrawEnd?.(ctx.getImageData(0, 0, c.width, c.height));
+        }
+        lastEmitRef.current = 0;
     }
 
     useEffect(() => {
-        const c = canvasRef.current;
-        if (!c) {
-            return;
+        resizeAndScale();
+        window.addEventListener('resize', resizeAndScale);
+        return () => {
+            window.removeEventListener('resize', resizeAndScale);
         }
-        const ctx = c.getContext('2d');
-        if (!ctx) {
-            return;
-        }
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, c.width, c.height);
-
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.lineWidth = lineWidth;
-        ctx.strokeStyle = '#000000';
     }, [lineWidth]);
   
   return (
     <div className="flex flex-col gap-3">
       <canvas 
         ref={canvasRef}
-        width={width}
-        height={height}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUpLeave}
         onMouseLeave={handleMouseUpLeave}
-        className='border border-gray-300 bg-white rounded shadow-sm'
+        className="border-4 border-blue-300 bg-white rounded shadow-sm shrink-0 w-[320px] h-[320px] md:w-[500px] md:h-[500px] touch-none"
       />
+      <button onClick={clearCanvas} className='px-4 py-2 bg-blue-500 rounded hover:bg-blue-700 transition-all'>
+        Clear
+      </button>
     </div>
   );
 };
