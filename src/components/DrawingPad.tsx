@@ -11,8 +11,6 @@ export type DrawingPadProps = {
 };
 
 const DrawingPad: React.FC<DrawingPadProps> = ({
-    width,
-    height,
     lineWidth = 30,
     live = true,
     onDrawEnd,

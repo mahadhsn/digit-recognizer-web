@@ -26,7 +26,8 @@ function App() {
   async function predictFromImage(img: ImageData) {
     if (!model) return;
     const x = preprocess(img);
-    const out = model.predict(x) as tf.Tensor;
+    const raw = model.predict(x) as tf.Tensor | tf.Tensor[];
+    const out: tf.Tensor = Array.isArray(raw) ? raw[0] as tf.Tensor : (raw as tf.Tensor);
     const data = Array.from(await out.data());
 
     const maxLogit = Math.max(...data);
@@ -50,14 +51,16 @@ function App() {
     const loadModel = async () => {
       try {
         // Try to load as LayersModel first
-        const loadedModel = await tf.loadLayersModel('public/model/web_model/model.json');
+        const loadedModel = await tf.loadLayersModel('/model/web_model/model.json');
         setModel(loadedModel);
       } catch (err1) {
+        console.warn('LayersModel load failed:', err1);
         try {
           // If that fails, try as GraphModel
-          const loadedGraphModel = await tf.loadGraphModel('public/model/web_model/model.json');
+          const loadedGraphModel = await tf.loadGraphModel('/model/web_model/model.json');
           setModel(loadedGraphModel);
         } catch (err2) {
+          console.error('GraphModel load failed:', err2);
           setError('Failed to load model: unsupported model format or file missing.');
         }
       } finally {
@@ -68,7 +71,7 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-15">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-16">
       {loading ? (
         <p>Loading model…</p>
       ) : error ? (
