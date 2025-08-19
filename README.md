@@ -33,8 +33,8 @@ Users can draw digits on a canvas component. The drawing is preprocessed by resi
 
 ## Tech Stack
 
-- React  
-- TypeScript  
-- Vite  
-- TailwindCSS  
+- React
+- TypeScript
+- Vite
+- TailwindCSS
 - TensorFlow.js
