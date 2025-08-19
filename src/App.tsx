@@ -71,7 +71,7 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-16">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 md:py-16 pt-5 pb-16">
       {loading ? (
         <p>Loading model…</p>
       ) : error ? (
@@ -84,7 +84,7 @@ function App() {
           Model is not loaded.
         </div>
       ) : (
-        <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center gap-10">
+        <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center gap-5">
           <div className="w-full flex flex-col items-center text-center">
             <h1 className='mb-10 text-4xl font-bold text-blue-500'>
             Digit Recognizer!
@@ -97,7 +97,7 @@ function App() {
             />
           </div>
           
-          <div className="flex flex-col items-center w-full mt-8 md:mt-0">
+          <div className="flex flex-col items-center w-full md:mt-0">
             <p className="text-xl mb-2">
               Top guess: <b className='text-blue-500'>{top ?? "—"}</b>
             </p>
