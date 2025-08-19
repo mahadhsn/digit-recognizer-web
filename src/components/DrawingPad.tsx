@@ -81,6 +81,62 @@ const DrawingPad: React.FC<DrawingPadProps> = ({
         }
     };
 
+    // Helper to get touch coordinates relative to the canvas
+    const getTouchPos = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        const rect = canvasRef.current!.getBoundingClientRect();
+        const t = e.touches[0] ?? e.changedTouches[0];
+        return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    };
+    // Touch event handlers (mirror mouse logic)
+    const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        e.preventDefault();
+        drawingRef.current = true;
+        lastRef.current = getTouchPos(e);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        e.preventDefault();
+        if (!drawingRef.current) return;
+        const ctx = canvasRef.current!.getContext('2d')!;
+        const p = getTouchPos(e);
+        const last = lastRef.current ?? p;
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+        lastRef.current = p;
+
+        if (live && onChange) {
+          const now = performance.now();
+          if (now - lastEmitRef.current >= THROTTLE_MS) {
+            const c = canvasRef.current;
+            if (c) {
+              const ctx2 = c.getContext('2d');
+              if (ctx2) {
+                onChange(ctx2.getImageData(0, 0, c.width, c.height));
+                lastEmitRef.current = now;
+              }
+            }
+          }
+        }
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        e.preventDefault();
+        const wasDrawing = drawingRef.current;
+        const hadLast = lastRef.current !== null;
+        drawingRef.current = false;
+        lastRef.current = null;
+        if (wasDrawing || hadLast) {
+            const c = canvasRef.current;
+            if (c) {
+                const ctx = c.getContext('2d');
+                if (ctx) onDrawEnd?.(ctx.getImageData(0, 0, c.width, c.height));
+            }
+        }
+        lastEmitRef.current = 0;
+    };
+
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
         drawingRef.current = true;
         lastRef.current = getPos(e);
@@ -151,6 +207,10 @@ const DrawingPad: React.FC<DrawingPadProps> = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUpLeave}
         onMouseLeave={handleMouseUpLeave}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
         className="border-4 border-blue-300 bg-white rounded shadow-sm shrink-0 w-[320px] h-[320px] md:w-[500px] md:h-[500px] touch-none"
       />
       <button onClick={clearCanvas} className='px-4 py-2 bg-blue-500 rounded hover:bg-blue-700 transition-all'>
