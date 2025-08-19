@@ -89,6 +89,12 @@ const DrawingPad: React.FC<DrawingPadProps> = ({
     }
     
     const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        // If no mouse button is pressed, treat as not drawing
+        if (e.buttons === 0) {
+            drawingRef.current = false;
+            lastRef.current = null;
+            return;
+        }
         if (!drawingRef.current) {
             return;
         }
@@ -117,12 +123,16 @@ const DrawingPad: React.FC<DrawingPadProps> = ({
     }
 
     const handleMouseUpLeave = () => {
+        const wasDrawing = drawingRef.current;
+        const hadLast = lastRef.current !== null;
         drawingRef.current = false;
         lastRef.current = null;
-        const c = canvasRef.current;
-        if (c) {
-            const ctx = c.getContext('2d');
-            if (ctx) onDrawEnd?.(ctx.getImageData(0, 0, c.width, c.height));
+        if (wasDrawing || hadLast) {
+            const c = canvasRef.current;
+            if (c) {
+                const ctx = c.getContext('2d');
+                if (ctx) onDrawEnd?.(ctx.getImageData(0, 0, c.width, c.height));
+            }
         }
         lastEmitRef.current = 0;
     }
