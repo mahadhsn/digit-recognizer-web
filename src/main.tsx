@@ -16,5 +16,5 @@ createRoot(document.getElementById("root")!).render(
     <PostHogProvider client={posthog}>
       <App />
     </PostHogProvider>
-  </StrictMode>
+  </StrictMode>,
 );
