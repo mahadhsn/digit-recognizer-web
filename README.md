@@ -31,6 +31,10 @@ Digit Recognizer Web is a React + TypeScript + Vite + TailwindCSS project that l
 
 Users can draw digits on a canvas component. The drawing is preprocessed by resizing it to a 28x28 grayscale image suitable for the model. A convolutional neural network (CNN) model loaded with TensorFlow.js then makes digit predictions, which are displayed in real time.
 
+## TensorFlow Model
+
+This uses an 8 layered CNN I created in Python using TensorFlow. The repo link can be found [here](https://github.com/mahadhsn/Digit-Recognizer).
+
 ## Tech Stack
 
 - React
