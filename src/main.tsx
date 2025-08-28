@@ -1,20 +1,24 @@
 import { StrictMode } from "react";
+import type { PostHogConfig } from "posthog-js";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import { PostHogProvider } from "posthog-js/react";
-import { posthog } from "posthog-js";
 
-posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_KEY, {
-  api_host: "/relay-aCkQ/",
-  ui_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
-  defaults: "2025-05-24",
-});
+const options: Partial<PostHogConfig> = {
+  api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
+};
+
+const apiKey = import.meta.env.VITE_PUBLIC_POSTHOG_KEY;
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <PostHogProvider client={posthog}>
+    {apiKey ? (
+      <PostHogProvider apiKey={apiKey} options={options}>
+        <App />
+      </PostHogProvider>
+    ) : (
       <App />
-    </PostHogProvider>
-  </StrictMode>,
+    )}
+  </StrictMode>
 );
